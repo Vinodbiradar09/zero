@@ -33,7 +33,7 @@ export const POST = async(req : Request) =>{
     console.log("clerk webhook received" , data);
 
     if(type === 'user.created' || type === 'user.updated'){
-        const emailAddress = data.email_addresses[0]?.email_address;
+        const emailAddress = data.email_addresses[0]?.email_address || `${data.id}@test.local`;
         const firstName = data.first_name;
         const lastName = data.last_name;
         const imageUrl = data.image_url;
