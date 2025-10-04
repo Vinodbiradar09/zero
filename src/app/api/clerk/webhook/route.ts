@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
+import type { NextRequest } from "next/server";
 
 
 export const POST = async(req : Request) =>{

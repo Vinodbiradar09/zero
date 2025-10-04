@@ -11,6 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "@/server/db";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * 1. CONTEXT
@@ -24,8 +25,13 @@ import { db } from "@/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
+
+
+// the below middleware sits between your request and route handler 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const user = await auth();
   return {
+    auth : user, // for this middleware we are returing the user to check the user validation
     db,
     ...opts,
   };
@@ -96,6 +102,12 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   return result;
 });
 
+const isAuth = t.middleware(({next , ctx})=>{
+  if(!ctx.auth?.userId){
+    throw new Error("unauthorized user from trpc")
+  }
+  return next({ctx : {...ctx , auth : ctx.auth! as Required<typeof ctx.auth>}})
+})
 /**
  * Public (unauthenticated) procedure
  *
@@ -104,3 +116,4 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+export const protectedProcedure = t.procedure.use(isAuth); // attaching the middleware for the auth
