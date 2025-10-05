@@ -1,14 +1,10 @@
-const MailPage = dynamic(() => import("@/app/mail/index"), {
-  loading: () => <div>Loading...</div>,
-  ssr: false,
-})
+
 import { ModeToggle } from "@/components/theme-toggle"
 import { UserButton } from "@clerk/nextjs"
 import dynamic from "next/dynamic"
-import { Button } from "@/components/ui/button"
 import ComposeButton from "@/app/mail/components/compose-button"
 import WebhookDebugger from "@/app/mail/components/webhook-debugger"
-import TopAccountSwitcher from "./top-account-switcher"
+import MailPage from "@/app/mail/index"
 export default function Home() {
   return <>
     <div className="absolute bottom-4 left-4">
@@ -19,7 +15,6 @@ export default function Home() {
         {process.env.NODE_ENV === 'development' && (
           <WebhookDebugger />
         )}
-
       </div>
     </div>
     <MailPage />

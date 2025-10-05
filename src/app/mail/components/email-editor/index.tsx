@@ -8,7 +8,7 @@ import Text from "@tiptap/extension-text";
 import { Button } from "@/components/ui/button";
 
 import { generate } from './action';
-import { readStreamableValue } from 'ai/rsc';
+import { readStreamableValue, createStreamableValue } from '@ai-sdk/rsc';
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/trpc/react";
 import { Input } from "@/components/ui/input";

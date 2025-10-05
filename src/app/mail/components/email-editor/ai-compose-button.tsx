@@ -11,7 +11,7 @@ import {
 
 import React from 'react'
 import { generateEmail } from "./action"
-import { readStreamableValue } from "ai/rsc"
+import { readStreamableValue, createStreamableValue } from '@ai-sdk/rsc';
 import { Bot } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"

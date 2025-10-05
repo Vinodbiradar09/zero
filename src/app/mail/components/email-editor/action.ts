@@ -2,7 +2,7 @@
 
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
-import { createStreamableValue } from "ai/rsc";
+import { readStreamableValue, createStreamableValue } from '@ai-sdk/rsc';
 const geminiModel = google("gemini-2.5-flash");
 
 // make sure to have the file name same as action.ts becoz next.js supports file name to be action.ts

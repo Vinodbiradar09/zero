@@ -2,7 +2,7 @@
 
 import {streamText} from "ai";
 import {google} from "@ai-sdk/google";
-import { createStreamableValue } from 'ai/rsc';
+import { readStreamableValue, createStreamableValue } from '@ai-sdk/rsc';
 const geminiModel = google("gemini-2.5-flash");
 
 export async function generate(input : string) {
