@@ -18,7 +18,7 @@ const transitionDebug = {
     type: "tween",
     ease: "easeOut",
     duration: 0.2,
-};
+} as const;
 const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
     const [accountId] = useLocalStorage('accountId', '');
     const [input , setInput] = React.useState("");
