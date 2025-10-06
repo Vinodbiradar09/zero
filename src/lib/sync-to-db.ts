@@ -2,6 +2,8 @@ import { db } from "@/server/db";
 import pLimit from 'p-limit';
 import type { EmailMessage , EmailAddress , EmailAttachment} from "./types";
 import { Prisma } from '@prisma/client';
+
+
 async function syncEmailsToDatabase(emails : EmailMessage[] , accountId : string) {
     console.log("attempting to sync email to database" , emails.length);
     const limit = pLimit(2);

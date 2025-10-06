@@ -28,6 +28,8 @@
     "@formkit/auto-animate": "^0.9.0",
     "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^2.2.0",
+    "@orama/orama": "^3.1.14",
+    "@orama/plugin-data-persistence": "^3.1.14",
     "@prisma/client": "^6.5.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",

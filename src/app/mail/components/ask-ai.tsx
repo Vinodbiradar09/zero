@@ -15,7 +15,8 @@ import { DefaultChatTransport } from 'ai';
 
 
 const transitionDebug = {
-    type: "easeOut",
+    type: "tween",
+    ease: "easeOut",
     duration: 0.2,
 };
 const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
