@@ -49,7 +49,7 @@ model StripeSubscription {
     priceId        String?
     customerId     String?
 
-    currentPeriodEnd DateTime
+    currentPeriodEnd DateTime?
     updatedAt        DateTime @updatedAt
 }
 

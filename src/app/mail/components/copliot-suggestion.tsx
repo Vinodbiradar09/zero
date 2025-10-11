@@ -1,6 +1,6 @@
 import Quill from 'quill';
 
-const Embed = Quill.import('blots/embed');
+const Embed = Quill.import('blots/embed') as any;
 
 export class CopilotSuggestion extends Embed {
     static blotName = 'copilot-suggestion';
