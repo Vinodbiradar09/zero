@@ -69,6 +69,7 @@ const EmailEditor = ({ toValues, ccValues, subject, setSubject, to, handleSend, 
 
     const editor = useEditor({
         autofocus: false,
+        immediatelyRender : false,
         extensions: [StarterKit, customText, GhostExtension],
         editorProps: {
             attributes: {

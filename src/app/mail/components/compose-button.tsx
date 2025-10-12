@@ -18,15 +18,16 @@ import { api } from "@/trpc/react"
 import { useLocalStorage } from "usehooks-ts"
 import { toast } from "sonner"
 
-
-const ComposeButton = ()=>{
+const ComposeButton = () => {
     const [open, setOpen] = React.useState(false)
     const [accountId] = useLocalStorage('accountId', '')
     const [toValues, setToValues] = React.useState<{ label: string; value: string; }[]>([])
     const [ccValues, setCcValues] = React.useState<{ label: string; value: string; }[]>([])
     const [subject, setSubject] = React.useState<string>('')
     const { data: account } = api.mail.getMyAccount.useQuery({ accountId })
-     React.useEffect(() => {
+
+
+    React.useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'c' && (event.ctrlKey || event.metaKey) && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName || '')) {
                 event.preventDefault();
@@ -41,44 +42,35 @@ const ComposeButton = ()=>{
         };
     }, []);
 
-    const sendEmail = api.mail.sendEmail.useMutation();
-    const handleSend = async(value : string)=>{
-        console.log("ack" , account);
-        console.log("val" , value);
-        if(!account) return
+    const sendEmail = api.mail.sendEmail.useMutation()
+
+    const handleSend = async (value: string) => {
+        console.log(account)
+        console.log({ value })
+        if (!account) return
         sendEmail.mutate({
             accountId,
-            threadId : undefined,
-            body : value,
+            threadId: undefined,
+            body: value,
             subject,
-            from : {
-                name : account?.name ?? "Me",
-                address : account?.emailAddress ?? "me@example.com",
-            },
-            to : toValues.map(to => ({
-                name : to.value,
-                address : to.value
-            })),
-            cc : toValues.map(cc =>({
-                name : cc.value,
-                address : cc.value,
-            })),
-            replyTo : {
-                name : account?.name ?? "Me",
-                address : account?.emailAddress ?? "me@example.com"
-            },
-            inReplyTo : undefined,
+            from: { name: account?.name ?? 'Me', address: account?.emailAddress ?? 'me@example.com' },
+            to: toValues.map(to => ({ name: to.value, address: to.value })),
+            cc: ccValues.map(cc => ({ name: cc.value, address: cc.value })),
+            replyTo: { name: account?.name ?? 'Me', address: account?.emailAddress ?? 'me@example.com' },
+            inReplyTo: undefined,
         }, {
-            onSuccess : ()=>{
-                toast.success("Email Sent")
+            onSuccess: () => {
+                toast.success("Email sent")
                 setOpen(false)
             },
-            onError : (error)=>{
-                console.log("error" , error)
+            onError: (error) => {
+                console.log(error)
                 toast.error(error.message)
             }
         })
     }
+
+
     return (
         <Drawer open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
