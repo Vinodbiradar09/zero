@@ -8,8 +8,8 @@ import { Send } from 'lucide-react';
 import { useLocalStorage } from 'usehooks-ts';
 import { cn } from '@/lib/utils';
 import { SparklesIcon } from '@heroicons/react/24/solid';
-// import StripeButton from './stripe-button';
-// import PremiumBanner from './premium-banner';
+import StripeButton from './stripe-button';
+import PremiumBanner from './premium-banner';
 import { toast } from 'sonner';
 import { DefaultChatTransport } from 'ai';
 
@@ -65,7 +65,7 @@ const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
     if (isCollapsed) return null;
     return (
      <div className='p-4 mb-14'>
-            {/* <PremiumBanner /> */}
+            <PremiumBanner />
             <div className="h-4"></div>
             <motion.div className="flex flex-1 flex-col items-end justify-end pb-4 border p-4 rounded-lg bg-gray-100 shadow-inner dark:bg-gray-900">
                 <div className="max-h-[50vh] overflow-y-scroll w-full flex flex-col gap-2" id='message-container'>

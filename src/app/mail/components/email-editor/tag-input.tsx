@@ -35,6 +35,7 @@ const TagInput: React.FC<TagInputProps> = ({ suggestions, defaultValues = [], la
             onInputChange={setInput}
             defaultValue={defaultValues}
             placeholder={''}
+            // @ts-ignore
             options={input ? options.concat({
                 label: (
                     <span className='flex items-center gap-2'>

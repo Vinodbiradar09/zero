@@ -1,24 +1,60 @@
-import { db } from "@/server/db";
+import { db } from '@/server/db';
+import type { SyncUpdatedResponse, EmailMessage, EmailAddress, EmailAttachment, EmailHeader } from './types';
 import pLimit from 'p-limit';
-import type { EmailMessage , EmailAddress , EmailAttachment} from "./types";
 import { Prisma } from '@prisma/client';
+import { OramaManager } from './orama';
+import { getEmbeddings } from './embeddings';
+import { turndown } from './turndown';
 
+async function syncEmailsToDatabase(emails: EmailMessage[], accountId: string) {
+    console.log(`Syncing ${emails.length} emails to database`);
+    const limit = pLimit(10); // Process up to 10 emails concurrently
 
-async function syncEmailsToDatabase(emails : EmailMessage[] , accountId : string) {
-    console.log("attempting to sync email to database" , emails.length);
-    const limit = pLimit(2);
+    const oramaClient = new OramaManager(accountId)
+    oramaClient.initialize()
+
     try {
-        for (const [index , email] of emails.entries()){
-            await upsertEmail(email , index , accountId);
+
+        async function syncToOrama() {
+            await Promise.all(emails.map(email => {
+                return limit(async () => {
+                    const body = turndown.turndown(email.body ?? email.bodySnippet ?? '')
+                    const payload = `From: ${email.from.name} <${email.from.address}>\nTo: ${email.to.map(t => `${t.name} <${t.address}>`).join(', ')}\nSubject: ${email.subject}\nBody: ${body}\n SentAt: ${new Date(email.sentAt).toLocaleString()}`
+                    const bodyEmbedding = await getEmbeddings(payload);
+                    await oramaClient.insert({
+                        title: email.subject,
+                        body: body,
+                        rawBody: email.bodySnippet ?? '',
+                        from: `${email.from.name} <${email.from.address}>`,
+                        to: email.to.map(t => `${t.name} <${t.address}>`),
+                        sentAt: new Date(email.sentAt).toLocaleString(),
+                        embeddings: bodyEmbedding,
+                        threadId: email.threadId
+                    })
+                })
+            }))
         }
+
+        async function syncToDB() {
+            for (const [index, email] of emails.entries()) {
+                await upsertEmail(email, index, accountId);
+            }
+        }
+
+        await Promise.all([syncToOrama(), syncToDB()])
+
+        await oramaClient.saveIndex()
     } catch (error) {
-        console.log('error in syncEmails to database', error)
+        console.log('error', error)
     }
+
 }
 
-async function upsertEmail(email : EmailMessage , index : number , accountId : string) {
-    console.log(`Upserting email ${index + 1}`);
+async function upsertEmail(email: EmailMessage, index: number, accountId: string) {
+    console.log(`Upserting email ${index + 1}`, JSON.stringify(email, null, 2));
     try {
+
+        // determine email label type
         let emailLabelType: 'inbox' | 'sent' | 'draft' = 'inbox'
         if (email.sysLabels.includes('inbox') || email.sysLabels.includes('important')) {
             emailLabelType = 'inbox'
@@ -28,25 +64,25 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
             emailLabelType = 'draft'
         }
 
-        // we will make the sets of the email address 
-        // we are making the sets of the from address we can reply to multiple email which are different same for cc and so on
-        const addressesToUpsert = new Map();
-        for (const address of [email.from , ...email.to , ...email.cc , ...email.bcc , ...email.replyTo]){
-            addressesToUpsert.set(address.address , address); // we are making the set like "vinod@gmail" : vinod@gmail
+        // 1. Upsert EmailAddress records
+        const addressesToUpsert = new Map()
+        for (const address of [email.from, ...email.to, ...email.cc, ...email.bcc, ...email.replyTo]) {
+            addressesToUpsert.set(address.address, address);
         }
+
         const upsertedAddresses: (Awaited<ReturnType<typeof upsertEmailAddress>> | null)[] = [];
 
-        for(const address of addressesToUpsert.values()){
-            const upsertedAddress = await upsertEmailAddress(address , accountId);
+        for (const address of addressesToUpsert.values()) {
+            const upsertedAddress = await upsertEmailAddress(address, accountId);
             upsertedAddresses.push(upsertedAddress);
         }
 
-       const addressMap = new Map(
+        const addressMap = new Map(
             upsertedAddresses.filter(Boolean).map(address => [address!.address, address])
         );
 
         const fromAddress = addressMap.get(email.from.address);
-        if(!fromAddress){
+        if (!fromAddress) {
             console.log(`Failed to upsert from address for email ${email.bodySnippet}`);
             return;
         }
@@ -56,8 +92,8 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
         const bccAddresses = email.bcc.map(addr => addressMap.get(addr.address)).filter(Boolean);
         const replyToAddresses = email.replyTo.map(addr => addressMap.get(addr.address)).filter(Boolean);
 
-        // upsert thread 
-         const thread = await db.thread.upsert({
+        // 2. Upsert Thread
+        const thread = await db.thread.upsert({
             where: { id: email.threadId },
             update: {
                 subject: email.subject,
@@ -89,7 +125,8 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
             }
         });
 
-          await db.email.upsert({
+        // 3. Upsert Email
+        await db.email.upsert({
             where: { id: email.id },
             update: {
                 threadId: thread.id,
@@ -154,14 +191,12 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
             }
         });
 
+
         const threadEmails = await db.email.findMany({
-            where : {
-                threadId : thread.id,
-            },
-            orderBy : {
-                receivedAt : "asc",
-            }
-        })
+            where: { threadId: thread.id },
+            orderBy: { receivedAt: 'asc' }
+        });
+
         let threadFolderType = 'sent';
         for (const threadEmail of threadEmails) {
             if (threadEmail.emailLabel === 'inbox') {
@@ -171,20 +206,18 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
                 threadFolderType = 'draft'; // Set to draft, but continue checking for inbox
             }
         }
-
         await db.thread.update({
-            where : {
-                id : thread.id,
-            },
-            data : {
+            where: { id: thread.id },
+            data: {
                 draftStatus: threadFolderType === 'draft',
                 inboxStatus: threadFolderType === 'inbox',
                 sentStatus: threadFolderType === 'sent',
             }
         });
 
-        for (const attachment of email.attachments){
-            await upsertAttachment(email.id , attachment);
+        // 4. Upsert Attachments
+        for (const attachment of email.attachments) {
+            await upsertAttachment(email.id, attachment);
         }
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -198,39 +231,24 @@ async function upsertEmail(email : EmailMessage , index : number , accountId : s
 async function upsertEmailAddress(address: EmailAddress, accountId: string) {
     try {
         const existingAddress = await db.emailAddress.findUnique({
-            where : {
-                accountId_address : {
-                    accountId,
-                    address : address.address ?? "",
-                }
-            }
+            where: { accountId_address: { accountId: accountId, address: address.address ?? "" } },
         });
-        if(existingAddress){
+
+        if (existingAddress) {
             return await db.emailAddress.update({
-                where : {
-                    id : existingAddress.id,
-                },
-                data : {
-                    name : address.name,
-                    raw : address.raw,
-                }
-            })
+                where: { id: existingAddress.id },
+                data: { name: address.name, raw: address.raw },
+            });
         } else {
             return await db.emailAddress.create({
-                data : {
-                    address : address.address ?? "",
-                    name : address.name,
-                    raw : address.raw,
-                    accountId,
-                }
-            })
+                data: { address: address.address ?? "", name: address.name, raw: address.raw, accountId },
+            });
         }
     } catch (error) {
         console.log(`Failed to upsert email address: ${error}`);
         return null;
     }
 }
-
 async function upsertAttachment(emailId: string, attachment: EmailAttachment) {
     try {
         await db.emailAttachment.upsert({
@@ -261,4 +279,4 @@ async function upsertAttachment(emailId: string, attachment: EmailAttachment) {
     }
 }
 
-export {syncEmailsToDatabase};
+export { syncEmailsToDatabase };

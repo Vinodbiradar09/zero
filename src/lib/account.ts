@@ -50,10 +50,7 @@ class Account {
             },
         })
         if (!account) throw new Error("Invalid token")
-        if (!account.nextDeltaToken){
-            console.log("account is " , account);
-            throw new Error("No delta token")
-        }
+        if (!account.nextDeltaToken) throw new Error("No delta token")
         let response = await this.getUpdatedEmails({ deltaToken: account.nextDeltaToken })
         let allEmails: EmailMessage[] = response.records
         let storedDeltaToken = account.nextDeltaToken
