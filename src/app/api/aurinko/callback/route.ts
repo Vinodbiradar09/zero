@@ -48,18 +48,20 @@ export const GET = async (req: NextRequest) => {
   }
 
   
-  await db.account.upsert({
-    where: { id: token.accountId.toString() },
-    update: { token: token.accessToken },
-    create: {
-      id: token.accountId.toString(),
-      userId,
-      token: token.accessToken,
-      provider: "Aurinko",
-      emailAddress: accountDetails.email,
-      name: accountDetails.name,
-    },
-  });
+   await db.account.upsert({
+        where: { id: token.accountId.toString() },
+        create: {
+            id: token.accountId.toString(),
+            userId,
+            token: token.accessToken,
+            provider: 'Aurinko',
+            emailAddress: accountDetails.email,
+            name: accountDetails.name
+        },
+        update: {
+            token: token.accessToken,
+        }
+    })
 
 waitUntil(
   axios.post(`${process.env.NEXT_PUBLIC_URL}/api/initial-sync` , {

@@ -33,6 +33,7 @@ export const POST = async (request: NextRequest) => {
       );
     }
     const account = new Account(dbAccount.token);
+    await account.createSubscription();
     const response = await account.performInitialSync();
     if (!response) {
       return NextResponse.json(

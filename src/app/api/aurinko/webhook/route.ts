@@ -7,9 +7,8 @@ import { waitUntil } from "@vercel/functions";
 
 const AURINKO_SIGNING_SECRET = process.env.AURINKO_SIGNING_SECRET;
 
-
-export const POST = async(req : NextRequest)=>{
-    console.log("post req is received");
+export const POST = async (req: NextRequest) => {
+    console.log("POST request received");
     const query = req.nextUrl.searchParams;
     const validationToken = query.get("validationToken");
     if (validationToken) {
@@ -20,20 +19,20 @@ export const POST = async(req : NextRequest)=>{
     const signature = req.headers.get("X-Aurinko-Signature");
     const body = await req.text();
 
-    if(!timestamp || !signature || !body){
+    if (!timestamp || !signature || !body) {
         return new Response("Bad Request", { status: 400 });
     }
+
     const basestring = `v0:${timestamp}:${body}`;
     const expectedSignature = crypto
         .createHmac("sha256", AURINKO_SIGNING_SECRET!)
         .update(basestring)
         .digest("hex");
 
-         if (signature !== expectedSignature) {
+    if (signature !== expectedSignature) {
         return new Response("Unauthorized", { status: 401 });
     }
-
-     type AurinkoNotification = {
+    type AurinkoNotification = {
         subscription: number;
         resource: string;
         accountId: number;
@@ -46,24 +45,20 @@ export const POST = async(req : NextRequest)=>{
         }[];
     };
 
-    const playload = JSON.parse(body) as AurinkoNotification;
-    console.log("received notification" , JSON.stringify(playload, null , 2));
-
+    const payload = JSON.parse(body) as AurinkoNotification;
+    console.log("Received notification:", JSON.stringify(payload, null, 2));
     const account = await db.account.findUnique({
-        where : {
-            id : playload.accountId.toString(),
+        where: {
+            id: payload.accountId.toString()
         }
     })
-
     if (!account) {
         return new Response("Account not found", { status: 404 });
     }
-
-    const acc = new Account(account.token);
-    waitUntil(acc.syncEmails().then(()=>{
+    const acc = new Account(account.token)
+    waitUntil(acc.syncEmails().then(() => {
         console.log("Synced emails")
     }))
 
     return new Response(null, { status: 200 });
-}
-
+};
