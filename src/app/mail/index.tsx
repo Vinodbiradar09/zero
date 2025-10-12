@@ -15,7 +15,7 @@ export default async function MailPage() {
   return (
     <>
       <div className="md:hidden">
-        <img
+        {/* <img
           src="/examples/mail-dark.png"
           width={1280}
           height={727}
@@ -28,7 +28,7 @@ export default async function MailPage() {
           height={727}
           alt="Mail"
           className="block dark:hidden"
-        />
+        /> */}
       </div>
       <div className="flex-col hidden md:flex h-screen overflow-scroll">
         <Mail
