@@ -31,12 +31,14 @@ const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
             }
         }),
         onError: (error) => {
+            console.log("error in chat completion" , error);
             if (error.message.includes('Limit reached')) {
                 toast.error('You have reached the limit for today. Please upgrade to pro to ask as many questions as you want')
             }
         },
     });
     React.useEffect(() => {
+        console.log("messages" , messages);
         const messageContainer = document.getElementById("message-container");
         if (messageContainer) {
             messageContainer.scrollTo({
@@ -46,10 +48,10 @@ const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
         }
     }, [messages]);
 
-    const handleSubmit = (e : React.FormEvent)=>{
+    const handleSubmit = async (e : React.FormEvent)=>{
         e.preventDefault();
         if(!input.trim()) return;
-        sendMessage({text : input});
+       await sendMessage({text : input});
         setInput('');
     }
 
@@ -60,7 +62,6 @@ const AskAI = ({ isCollapsed }: { isCollapsed: boolean }) => {
             setInput(e.target?.value || "")
         }
     }
-
 
     if (isCollapsed) return null;
     return (

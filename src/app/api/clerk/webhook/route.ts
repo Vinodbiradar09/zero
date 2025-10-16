@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 
 
 export const POST = async(req : Request) =>{
+    console.log("clerk webhook is hitting");
     const headerPayload = await headers();
     const svix_id = headerPayload.get("svix-id");
     const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -17,7 +18,6 @@ export const POST = async(req : Request) =>{
     const payload = await req.json();
     const body = JSON.stringify(payload);
     const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
-
     let evt;
     try {
         evt = wh.verify(body,{
@@ -40,7 +40,7 @@ export const POST = async(req : Request) =>{
         const imageUrl = data.image_url;
         const id = data.id;
 
-        await db.user.upsert({
+       const testUser = await db.user.upsert({
         where : {
             id,
         },
@@ -58,6 +58,9 @@ export const POST = async(req : Request) =>{
             imageUrl
         }
     });
+    if(!testUser){
+        console.log("the test user is failed to save to the database");
+    }
     console.log("User synced to database:", id);
 }
    return new Response('Webhook received' , {status : 200});

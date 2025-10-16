@@ -38,7 +38,7 @@ export class OramaManager {
                     from : "string",
                     to : "string[]",
                     sentAt : "string",
-                    embeddings: 'vector[1536]',
+                    embeddings: 'vector[768]',
                     threadId: 'string'
                 }
             });
@@ -55,6 +55,7 @@ export class OramaManager {
 
     async vectorSearch({prompt , numResults = 10} : {prompt : string  , numResults? : number}){
         const embeddings = await getEmbeddings(prompt);
+        console.log("the embeddings are " , embeddings);
         const result = await search(this.orama , {
             mode : "hybrid",
             term : prompt,
